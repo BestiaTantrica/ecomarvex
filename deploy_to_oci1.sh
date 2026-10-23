@@ -17,7 +17,7 @@ echo "============================================================"
 
 chmod 600 "$LLAVE"
 
-rsync -avz --exclude 'venv' --exclude '__pycache__' --exclude 'data/*.db' \
+rsync -avz --exclude 'venv' --exclude '__pycache__' --exclude 'data/*.db' --exclude '.git' \
   --exclude 'whatsapp_bridge/node_modules' --exclude 'whatsapp_bridge/auth_info' \
   -e "ssh -i $LLAVE -o StrictHostKeyChecking=no" \
   "$LOCAL_DIR/" "${OCI1_USER}@${OCI1_IP}:${REMOTE_DIR}/"
