@@ -1,0 +1,14 @@
+{
+  "name": "whatsapp-bot-bridge",
+  "version": "1.0.0",
+  "description": "EcoMarvex WhatsApp 24/7 AI Bot Bridge",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "^7.0.0-rc14",
+    "qrcode": "^1.5.4",
+    "pino": "^9.6.0"
+  }
+}
