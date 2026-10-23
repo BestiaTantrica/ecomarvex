@@ -497,6 +497,33 @@ async def admin_dropsheable_analyze(payload: dict):
         raise HTTPException(status_code=500, detail=str(e))
 
 # ==========================================
+# GESTIÓN EN VIVO DROPSHEABLE API HUB
+# ==========================================
+@app.get("/api/admin/dropsheable/status")
+async def admin_dropsheable_status():
+    import dropsheable_service
+    return dropsheable_service.check_dropsheable_connection()
+
+@app.get("/api/admin/dropsheable/catalog")
+async def admin_dropsheable_catalog(search: Optional[str] = "", category: Optional[str] = "", supplier_id: Optional[int] = None):
+    import dropsheable_service
+    return dropsheable_service.get_dropsheable_catalog(search=search or "", category=category or "", supplier_id=supplier_id)
+
+@app.post("/api/admin/dropsheable/import")
+async def admin_dropsheable_import(payload: dict):
+    product = payload.get("product")
+    if not product:
+        raise HTTPException(status_code=400, detail="Faltan datos del producto a importar.")
+    custom_sale_price = payload.get("custom_sale_price")
+    import dropsheable_service
+    return dropsheable_service.import_product_to_store(product, custom_sale_price)
+
+@app.post("/api/admin/dropsheable/sync-stock")
+async def admin_dropsheable_sync_stock():
+    import dropsheable_service
+    return dropsheable_service.sync_stock_with_dropsheable()
+
+# ==========================================
 # GESTIÓN DE BOT WHATSAPP WEB (BAILEYS BRIDGE)
 # ==========================================
 @app.get("/api/admin/whatsapp/status")

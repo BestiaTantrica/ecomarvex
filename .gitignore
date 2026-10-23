@@ -17,6 +17,8 @@ data/*.sqlite
 llave_oci
 *.pem
 *.key
+dropsheableapi*.txt
+dropsheable_api_docs.html
 
 # Node.js / WhatsApp Bridge
 node_modules/

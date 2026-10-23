@@ -386,14 +386,79 @@
 
       <!-- TAB: DROPSHEABLE HUB -->
       <section id="tabDropsheable" class="tab-pane">
-        <div class="card" style="margin-bottom: 24px; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 1px solid #bae6fd;">
-          <div style="display:flex; align-items:center; gap:16px;">
-            <div style="font-size:2.5rem; color:#0284c7;"><i class="fa-solid fa-boxes-packing"></i></div>
+        <!-- Banner de Conexión en Vivo API REST -->
+        <div class="dsh-live-banner">
+          <div>
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:6px; flex-wrap:wrap;">
+              <h2 style="margin:0; font-size:1.5rem; font-weight:800;">Dropsheable Argentina — Hub Mayorista en Vivo</h2>
+              <span id="dshLiveConnectionBadge" class="dsh-live-badge">
+                <span class="dsh-pulse"></span>
+                <span>API Conectada</span>
+              </span>
+            </div>
+            <p style="margin:0; font-size:0.92rem; opacity:0.92;">
+              Integración oficial directa con <a href="https://dropsheable.com.ar" target="_blank" style="color:white; text-decoration:underline;">dropsheable.com.ar</a>. Consultá productos mayoristas, stock de depósitos argentinos e importalos a tu tienda en 1 clic.
+            </p>
+            <div class="dsh-meta-chips">
+              <span class="dsh-chip"><i class="fa-solid fa-user-tag"></i> Minorista: <strong>MinSeller #4754</strong></span>
+              <span class="dsh-chip"><i class="fa-solid fa-plug"></i> Integración: <strong>EcoMarvex (ID #7)</strong></span>
+              <span class="dsh-chip"><i class="fa-solid fa-server"></i> API: <strong>v1 (REST /frontv2)</strong></span>
+              <span class="dsh-chip"><i class="fa-solid fa-truck-fast"></i> Envíos: <strong>Andreani / Correo Arg</strong></span>
+            </div>
+          </div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn-primary" onclick="checkDropsheableLiveConnection()" style="background:rgba(255,255,255,0.2); border:1px solid rgba(255,255,255,0.4); backdrop-filter:blur(6px);">
+              <i class="fa-solid fa-rotate"></i> Probar Conexión
+            </button>
+            <button class="btn-primary" onclick="syncDropsheableStock()" style="background:#10b981; border:none; box-shadow:0 4px 10px rgba(16,185,129,0.3);">
+              <i class="fa-solid fa-arrows-rotate"></i> Sincronizar Stock
+            </button>
+          </div>
+        </div>
+
+        <!-- Catálogo Mayorista en Vivo & Importador de 1 Clic -->
+        <div class="card" style="margin-bottom:24px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
             <div>
-              <h2 style="color:#0369a1; margin-bottom:4px;">Centro de Proveedores & Dropsheable Argentina</h2>
-              <p style="color:#0284c7; font-size:0.95rem;">
-                Dropsheable te permite vender sin stock físico. Tus proveedores despachan con Andreani o Correo Argentino directamente a la casa de tus clientes en todo el país.
-              </p>
+              <h3 style="color:#0284c7; margin-bottom:4px;"><i class="fa-solid fa-boxes-stacked"></i> Catálogo Mayorista de Proveedores (Importación con 1 Clic)</h3>
+              <p class="card-hint">Explorá los productos disponibles en los depósitos de Dropsheable Argentina. Elegí los que quieras vender y agregalos a tu tienda con un solo clic.</p>
+            </div>
+            <span id="dshCatalogCountBadge" class="status-pill" style="background:#e0f2fe; color:#0369a1; font-weight:700;">
+              Cargando catálogo...
+            </span>
+          </div>
+
+          <!-- Barra de Filtros y Búsqueda -->
+          <div class="dsh-catalog-toolbar">
+            <div style="flex:1; min-width:240px; position:relative;">
+              <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#94a3b8;"></i>
+              <input type="text" id="dshSearchInput" placeholder="Buscar por título, SKU o marca..." style="width:100%; padding-left:36px;" oninput="debounceDshCatalogSearch()">
+            </div>
+            <select id="dshCategoryFilter" style="padding:10px 14px; border:1px solid #cbd5e1; border-radius:8px; background:white; font-size:0.88rem; font-weight:600;" onchange="loadDropsheableCatalog()">
+              <option value="">Todas las Categorías</option>
+              <option value="Tecnología">Tecnología & Wearables</option>
+              <option value="Hogar">Hogar & Decoración</option>
+              <option value="Electrodomésticos">Electrodomésticos</option>
+              <option value="Belleza">Belleza & Cuidado</option>
+              <option value="Accesorios">Accesorios de Auto</option>
+              <option value="Deportes">Deportes & Salud</option>
+            </select>
+            <select id="dshSupplierFilter" style="padding:10px 14px; border:1px solid #cbd5e1; border-radius:8px; background:white; font-size:0.88rem; font-weight:600;" onchange="loadDropsheableCatalog()">
+              <option value="">Todos los Proveedores</option>
+              <option value="2">TecnoWholesale (CABA)</option>
+              <option value="133">Por Algo Paso (Ramos Mejía)</option>
+              <option value="7">MayoristaNet (CABA)</option>
+              <option value="12">Sina Artículos Hogar (CABA)</option>
+              <option value="131">Lumina (Ituzaingó)</option>
+              <option value="50">Proveedora Insumos Médicos (CABA)</option>
+            </select>
+          </div>
+
+          <!-- Grid de Productos Mayoristas -->
+          <div id="dshCatalogGrid" class="dsh-grid">
+            <div style="grid-column: 1/-1; text-align:center; padding:40px; color:#64748b;">
+              <i class="fa-solid fa-circle-notch fa-spin" style="font-size:2rem; color:#0284c7; margin-bottom:12px;"></i>
+              <p>Consultando catálogo en tiempo real con la API de Dropsheable...</p>
             </div>
           </div>
         </div>

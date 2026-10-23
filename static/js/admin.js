@@ -69,6 +69,8 @@ function switchTab(tab) {
     document.getElementById('tabDropsheable').classList.add('active');
     document.getElementById('pageTitle').innerText = 'Centro de Proveedores Dropsheable';
     loadSettings();
+    checkDropsheableLiveConnection();
+    loadDropsheableCatalog();
   } else if (tab === 'settings') {
     document.getElementById('tabSettings').classList.add('active');
     document.getElementById('pageTitle').innerText = 'Configuración del Negocio';
@@ -631,6 +633,8 @@ async function saveDropsheableCredentials() {
         badge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Credenciales Guardadas';
       }
       alert("✅ ¡Credenciales de Dropsheable guardadas y activadas con éxito!");
+      checkDropsheableLiveConnection();
+      loadDropsheableCatalog();
     } else {
       alert("Error al guardar credenciales en el servidor.");
     }
@@ -638,6 +642,207 @@ async function saveDropsheableCredentials() {
     alert("Error de conexión al guardar credenciales de Dropsheable.");
   }
 }
+
+// ==========================================
+// DROPSHEABLE LIVE HUB & 1-CLICK IMPORT
+// ==========================================
+let currentDshCatalog = [];
+let dshSearchTimeout = null;
+
+async function checkDropsheableLiveConnection() {
+  const badge = document.getElementById('dshLiveConnectionBadge');
+  if (!badge) return;
+
+  badge.innerHTML = '<span class="dsh-pulse" style="background:#eab308;"></span><span>Verificando...</span>';
+
+  try {
+    const res = await fetch('/api/admin/dropsheable/status');
+    const data = await res.json();
+    if (data.connected) {
+      badge.innerHTML = '<span class="dsh-pulse"></span><span>API Conectada (v1)</span>';
+      badge.style.background = 'rgba(34, 197, 94, 0.25)';
+      badge.style.borderColor = 'rgba(34, 197, 94, 0.5)';
+      const sBadge = document.getElementById('dropsheableStatusBadge');
+      if (sBadge) {
+        sBadge.style.background = '#dcfce7';
+        sBadge.style.color = '#15803d';
+        sBadge.innerHTML = `<i class="fa-solid fa-circle-check"></i> Activa (MinSeller #${data.min_seller_id || 4754})`;
+      }
+    } else {
+      badge.innerHTML = '<span class="dsh-pulse" style="background:#ef4444; animation:none;"></span><span>Desconectada</span>';
+      badge.style.background = 'rgba(239, 68, 68, 0.25)';
+      badge.style.borderColor = 'rgba(239, 68, 68, 0.5)';
+    }
+  } catch (err) {
+    console.error("Error verificando Dropsheable:", err);
+    badge.innerHTML = '<span class="dsh-pulse" style="background:#ef4444; animation:none;"></span><span>Error Red</span>';
+  }
+}
+
+function debounceDshCatalogSearch() {
+  clearTimeout(dshSearchTimeout);
+  dshSearchTimeout = setTimeout(() => {
+    loadDropsheableCatalog();
+  }, 350);
+}
+
+async function loadDropsheableCatalog() {
+  const grid = document.getElementById('dshCatalogGrid');
+  const countBadge = document.getElementById('dshCatalogCountBadge');
+  if (!grid) return;
+
+  const search = document.getElementById('dshSearchInput')?.value.trim() || '';
+  const category = document.getElementById('dshCategoryFilter')?.value || '';
+  const supplierId = document.getElementById('dshSupplierFilter')?.value || '';
+
+  grid.innerHTML = `
+    <div style="grid-column: 1/-1; text-align:center; padding:40px; color:#64748b;">
+      <i class="fa-solid fa-circle-notch fa-spin" style="font-size:2rem; color:#0284c7; margin-bottom:12px;"></i>
+      <p>Cargando catálogo en tiempo real con la API de Dropsheable...</p>
+    </div>
+  `;
+
+  try {
+    const params = new URLSearchParams();
+    if (search) params.append('search', search);
+    if (category) params.append('category', category);
+    if (supplierId) params.append('supplier_id', supplierId);
+
+    const res = await fetch(`/api/admin/dropsheable/catalog?${params.toString()}`);
+    const data = await res.json();
+    currentDshCatalog = data.products || [];
+
+    if (countBadge) {
+      countBadge.innerText = `${currentDshCatalog.length} productos disponibles`;
+    }
+
+    if (currentDshCatalog.length === 0) {
+      grid.innerHTML = `
+        <div style="grid-column: 1/-1; text-align:center; padding:40px; background:white; border-radius:12px; border:1px dashed #cbd5e1;">
+          <i class="fa-solid fa-box-open" style="font-size:2.5rem; color:#94a3b8; margin-bottom:10px;"></i>
+          <h4 style="color:#334155;">No se encontraron productos con esos filtros</h4>
+          <p style="color:#64748b; font-size:0.9rem;">Probá buscando con otro término o limpiando los filtros de categoría y proveedor.</p>
+        </div>
+      `;
+      return;
+    }
+
+    // Get current local products to see if already imported
+    const localRes = await fetch('/api/admin/products');
+    const localProducts = await localRes.json();
+    const importedSkus = new Set(localProducts.map(p => p.supplier_sku).filter(Boolean));
+
+    grid.innerHTML = currentDshCatalog.map((prod, index) => {
+      const isImported = importedSkus.has(prod.sku);
+      const margin = (prod.suggested_price - prod.cost_price).toFixed(0);
+      const marginPct = ((margin / prod.suggested_price) * 100).toFixed(0);
+      const encodedProd = encodeURIComponent(JSON.stringify(prod));
+
+      return `
+        <div class="dsh-card">
+          <div class="dsh-card-img-wrap">
+            <img src="${prod.image_url}" alt="${prod.title}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600'">
+            <span class="dsh-card-origin-tag"><i class="fa-solid fa-location-dot"></i> ${prod.shipping_origin}</span>
+            <span class="dsh-card-stock-tag"><i class="fa-solid fa-boxes-stacked"></i> ${prod.stock} u.</span>
+          </div>
+          <div class="dsh-card-body">
+            <span class="dsh-category-tag">${prod.category}</span>
+            <h4 class="dsh-title" title="${prod.title}">${prod.title}</h4>
+            <div class="dsh-supplier-info">
+              <i class="fa-solid fa-building" style="color:#0284c7;"></i>
+              <span>${prod.supplier_name}</span>
+              <span style="color:#cbd5e1;">•</span>
+              <span style="font-family:monospace; font-size:0.75rem; color:#64748b;">${prod.sku}</span>
+            </div>
+
+            <div class="dsh-pricing-box">
+              <div class="dsh-price-row">
+                <span style="color:#64748b;">Costo Mayorista:</span>
+                <strong style="color:#0f172a;">$${Number(prod.cost_price).toLocaleString('es-AR')}</strong>
+              </div>
+              <div class="dsh-price-row">
+                <span style="color:#64748b;">PVP Sugerido:</span>
+                <strong style="color:#0284c7; font-size:1.05rem;">$${Number(prod.suggested_price).toLocaleString('es-AR')}</strong>
+              </div>
+              <div class="dsh-price-row" style="margin-top:6px; padding-top:6px; border-top:1px dashed #e2e8f0;">
+                <span style="color:#166534; font-weight:600;">Tu Ganancia Neta:</span>
+                <span class="dsh-margin-badge">+$${Number(margin).toLocaleString('es-AR')} (${marginPct}%)</span>
+              </div>
+            </div>
+
+            <div style="margin-top:auto;">
+              ${isImported ? `
+                <button class="dsh-import-btn imported" disabled>
+                  <i class="fa-solid fa-circle-check"></i> Ya en tu Tienda
+                </button>
+              ` : `
+                <button class="dsh-import-btn" id="btnImport_${index}" onclick="importDropsheableProduct(this, '${encodedProd}')">
+                  <i class="fa-solid fa-bolt"></i> Importar a mi Tienda (1 Clic)
+                </button>
+              `}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+  } catch (err) {
+    console.error("Error cargando catálogo Dropsheable:", err);
+    grid.innerHTML = `
+      <div style="grid-column: 1/-1; text-align:center; padding:30px; color:#ef4444;">
+        <i class="fa-solid fa-triangle-exclamation" style="font-size:2rem; margin-bottom:10px;"></i>
+        <p>No se pudo conectar con el catálogo de Dropsheable. Verificá tus credenciales.</p>
+      </div>
+    `;
+  }
+}
+
+async function importDropsheableProduct(btn, encodedProd) {
+  try {
+    const product = JSON.parse(decodeURIComponent(encodedProd));
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Importando...';
+
+    const res = await fetch('/api/admin/dropsheable/import', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ product: product })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      btn.className = 'dsh-import-btn imported';
+      btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> ¡Importado a la Tienda!';
+      if (typeof loadProducts === 'function') loadProducts();
+      alert(`🎉 ¡"${product.title}" fue importado con éxito a tu tienda EcoMarvex!\n\nPrecio de venta: $${Number(data.sale_price).toLocaleString('es-AR')}\nTu ganancia estimada: $${Number(data.margin).toLocaleString('es-AR')}`);
+    } else {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-bolt"></i> Reintentar Importación';
+      alert(`Error al importar: ${data.error || 'No se pudo guardar el producto'}`);
+    }
+  } catch (err) {
+    console.error("Error al importar producto:", err);
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-bolt"></i> Reintentar Importación';
+    alert("Ocurrió un error de conexión al importar el producto.");
+  }
+}
+
+async function syncDropsheableStock() {
+  try {
+    const res = await fetch('/api/admin/dropsheable/sync-stock', { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+      alert(`✅ Sincronización exitosa con Dropsheable:\n\nProductos verificados: ${data.local_products_checked}\nProductos con stock actualizado: ${data.updated_count}`);
+      loadDropsheableCatalog();
+    } else {
+      alert(`Error al sincronizar stock: ${data.error}`);
+    }
+  } catch (e) {
+    alert("Error de conexión al sincronizar stock.");
+  }
+}
+
 
 // GESTIÓN WHATSAPP BOT 24/7 (BAILEYS QR)
 let waPollInterval = null;
