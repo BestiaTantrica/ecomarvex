@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="stylesheet" href="/static/css/style.css?v=8">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
@@ -281,6 +281,28 @@
     <div class="footer-bottom">
       <p>&copy; 2026 {{ settings.store_name }}. Todos los derechos reservados.</p>
     </div>
+  </footer>
+
+  <!-- Botón Flotante WhatsApp 24/7 con Mensaje Directo -->
+  <a href="https://wa.me/{{ settings.whatsapp_phone }}?text=Hola!%20Quería%20hacer%20una%20consulta%20sobre%20los%20productos%20de%20EcoMarvex" target="_blank" class="floating-whatsapp" aria-label="Atención por WhatsApp">
+    <i class="fa-brands fa-whatsapp"></i>
+    <span class="floating-whatsapp-tooltip">¿Tenés dudas? Chateá con nosotros</span>
+  </a>
+
+  <!-- Barra Flotante Inferior de Carrito Móvil -->
+  <div id="mobileCartBar" class="mobile-bottom-cart-bar" onclick="toggleCart()">
+    <div class="mobile-cart-info">
+      <div class="mobile-cart-badge"><i class="fa-solid fa-cart-shopping"></i> <span id="mobileCartCount">0</span></div>
+      <div class="mobile-cart-total-text">
+        <span>Total Carrito</span>
+        <strong id="mobileCartTotal">$0</strong>
+      </div>
+    </div>
+    <button class="mobile-cart-action-btn">
+      Ver Carrito <i class="fa-solid fa-chevron-right"></i>
+    </button>
+  </div>
+
   <script>
     window.STORE_CONFIG = {
       storeName: {{ settings.store_name|tojson }},
@@ -289,6 +311,6 @@
       shippingPolicyText: {{ (settings.shipping_policy_text or '')|tojson }}
     };
   </script>
-  <script src="/static/js/store.js"></script>
+  <script src="/static/js/store.js?v=8"></script>
 </body>
 </html>

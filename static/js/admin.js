@@ -39,6 +39,26 @@ function showAdmin() {
   loadDashboardStats();
 }
 
+function toggleAdminSidebar(forceClose = false) {
+  const sidebar = document.getElementById('adminSidebar');
+  const overlay = document.getElementById('adminSidebarOverlay');
+  if (!sidebar) return;
+
+  if (forceClose === true) {
+    sidebar.classList.remove('open');
+    if (overlay) overlay.classList.remove('active');
+  } else {
+    const isOpen = sidebar.classList.contains('open');
+    if (isOpen) {
+      sidebar.classList.remove('open');
+      if (overlay) overlay.classList.remove('active');
+    } else {
+      sidebar.classList.add('open');
+      if (overlay) overlay.classList.add('active');
+    }
+  }
+}
+
 function logout() {
   sessionStorage.removeItem('admin_auth');
   window.location.reload();
@@ -48,6 +68,14 @@ function switchTab(tab) {
   currentTab = tab;
   document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+
+  // Sincronizar botones de navegación móvil inferior
+  document.querySelectorAll('.mob-nav-btn').forEach(btn => btn.classList.remove('active'));
+  const mobActiveBtn = document.querySelector(`.mob-nav-btn[data-mob-tab="${tab}"]`);
+  if (mobActiveBtn) mobActiveBtn.classList.add('active');
+
+  // Cerrar sidebar off-canvas si estaba abierto
+  toggleAdminSidebar(true);
 
   if (tab === 'dashboard') {
     document.getElementById('tabDashboard').classList.add('active');
@@ -77,7 +105,7 @@ function switchTab(tab) {
     loadSettings();
   }
 
-  // Marcar botón activo
+  // Marcar botón activo en barra lateral
   const activeBtn = Array.from(document.querySelectorAll('.nav-item')).find(b => b.getAttribute('onclick')?.includes(tab));
   if (activeBtn) activeBtn.classList.add('active');
 }
@@ -93,8 +121,16 @@ async function loadDashboardStats() {
     document.getElementById('statTotalOrders').innerText = data.total_orders;
     
     const badge = document.getElementById('badgePendingOrders');
-    badge.innerText = data.pending_orders;
-    badge.style.display = data.pending_orders > 0 ? 'inline-block' : 'none';
+    if (badge) {
+      badge.innerText = data.pending_orders;
+      badge.style.display = data.pending_orders > 0 ? 'inline-block' : 'none';
+    }
+
+    const mobBadge = document.getElementById('mobBadgePendingOrders');
+    if (mobBadge) {
+      mobBadge.innerText = data.pending_orders;
+      mobBadge.style.display = data.pending_orders > 0 ? 'inline-block' : 'none';
+    }
   } catch (e) {
     console.error("Error cargando stats:", e);
   }

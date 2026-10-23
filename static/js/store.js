@@ -17,6 +17,20 @@ function updateCartBadge() {
   const count = cart.reduce((acc, item) => acc + item.quantity, 0);
   const badge = document.getElementById('cartCount');
   if (badge) badge.innerText = count;
+
+  const mobileBar = document.getElementById('mobileCartBar');
+  const mobileCount = document.getElementById('mobileCartCount');
+  const mobileTotal = document.getElementById('mobileCartTotal');
+  if (mobileBar) {
+    if (count > 0) {
+      const subtotal = cart.reduce((acc, i) => acc + (i.price * i.quantity), 0);
+      if (mobileCount) mobileCount.innerText = count;
+      if (mobileTotal) mobileTotal.innerText = `$${subtotal.toLocaleString('es-AR')}`;
+      mobileBar.classList.add('visible');
+    } else {
+      mobileBar.classList.remove('visible');
+    }
+  }
 }
 
 function addToCart(id, title, price, image, origin = 'CABA / GBA', supplier = 'Dropsheable Mayorista') {

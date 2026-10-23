@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/css/admin.css">
+  <link rel="stylesheet" href="/static/css/admin.css?v=8">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
@@ -30,11 +30,31 @@
 
   <!-- Admin Main Layout -->
   <div id="adminApp" class="admin-layout" style="display: none;">
+    <!-- Mobile Top Header Bar -->
+    <div class="mobile-admin-header">
+      <button class="mobile-toggle-btn" onclick="toggleAdminSidebar()" aria-label="Abrir Menú">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+      <div class="mobile-admin-brand">
+        <i class="fa-solid fa-gem" style="color:#38bdf8;"></i>
+        <span>EcoMarvex Admin</span>
+      </div>
+      <button class="mobile-logout-btn" onclick="logout()" aria-label="Salir">
+        <i class="fa-solid fa-right-from-bracket"></i>
+      </button>
+    </div>
+
+    <!-- Backdrop Overlay for Mobile Sidebar -->
+    <div id="adminSidebarOverlay" class="admin-sidebar-overlay" onclick="toggleAdminSidebar()"></div>
+
     <!-- Sidebar -->
-    <aside class="sidebar">
+    <aside id="adminSidebar" class="sidebar">
       <div class="sidebar-brand">
-        <i class="fa-solid fa-store"></i>
-        <span>Admin Tienda</span>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <i class="fa-solid fa-gem"></i>
+          <span>EcoMarvex Admin</span>
+        </div>
+        <button class="sidebar-close-mob-btn" onclick="toggleAdminSidebar()" aria-label="Cerrar"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <nav class="sidebar-nav">
         <button class="nav-item active" onclick="switchTab('dashboard')">
@@ -543,6 +563,31 @@
         </div>
       </section>
     </main>
+
+    <!-- Mobile Bottom Navigation Bar -->
+    <nav class="mobile-bottom-nav">
+      <button class="mob-nav-btn active" data-mob-tab="dashboard" onclick="switchTab('dashboard')">
+        <i class="fa-solid fa-chart-line"></i>
+        <span>Inicio</span>
+      </button>
+      <button class="mob-nav-btn" data-mob-tab="orders" onclick="switchTab('orders')">
+        <i class="fa-solid fa-boxes-stacked"></i>
+        <span id="mobBadgePendingOrders" class="mob-nav-badge" style="display:none;">0</span>
+        <span>Pedidos</span>
+      </button>
+      <button class="mob-nav-btn" data-mob-tab="products" onclick="switchTab('products')">
+        <i class="fa-solid fa-tags"></i>
+        <span>Productos</span>
+      </button>
+      <button class="mob-nav-btn" data-mob-tab="dropsheable" onclick="switchTab('dropsheable')">
+        <i class="fa-solid fa-boxes-packing"></i>
+        <span>Mayoristas</span>
+      </button>
+      <button class="mob-nav-btn" onclick="toggleAdminSidebar()">
+        <i class="fa-solid fa-ellipsis"></i>
+        <span>Más</span>
+      </button>
+    </nav>
   </div>
 
   <!-- Modal Contenido IA (Viral Social Media) -->
@@ -740,6 +785,6 @@
     </div>
   </div>
 
-  <script src="/static/js/admin.js?v=7"></script>
+  <script src="/static/js/admin.js?v=8"></script>
 </body>
 </html>
