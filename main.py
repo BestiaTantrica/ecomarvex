@@ -287,7 +287,7 @@ async def admin_page(request: Request):
 @app.post("/api/admin/login")
 async def admin_login(pin: str = Form(...)):
     settings = get_settings()
-    configured_pin = settings.get("admin_pin", "1234")
+    configured_pin = settings.get("admin_pin", "2011")
     if pin == configured_pin:
         return {"success": True, "token": "admin-authenticated"}
     raise HTTPException(status_code=401, detail="PIN incorrecto")

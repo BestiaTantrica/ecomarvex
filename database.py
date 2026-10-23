@@ -87,7 +87,7 @@ def init_db():
     defaults = {
         "store_name": "EcoMarvex",
         "store_description": "Tu tienda online de confianza. Envíos directos a todo el país.",
-        "admin_pin": "1234",
+        "admin_pin": "2011",
         "whatsapp_phone": "5491100000000",
         "mp_public_key": "",
         "mp_access_token": "",
