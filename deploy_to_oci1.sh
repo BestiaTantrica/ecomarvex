@@ -159,5 +159,5 @@ EOF
 echo "============================================================"
 echo "🎉 ¡DESPLIEGUE EXITOSO EN OCI-1!"
 echo "🌐 Tienda disponible en: http://$OCI1_IP"
-echo "🛠️ Panel Administrador: http://$OCI1_IP/admin (PIN: 1234)"
+echo "🛠️ Panel Administrador: http://$OCI1_IP/admin (PIN configurado en tu panel: 2011)"
 echo "============================================================"

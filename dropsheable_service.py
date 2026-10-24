@@ -153,8 +153,16 @@ def _normalize_dropsheable_product(p: Dict[str, Any]) -> Dict[str, Any]:
         
     description = (p.get("DescriptionPersonalizada") or p.get("description") or "").strip()
     
-    # Determine shipping origin & dispatch time
-    shipping_origin = "Buenos Aires / CABA"
+    # Determine shipping origin & dispatch time per warehouse
+    if seller_id == 129:
+        shipping_origin = "Depósito Perfumería #129 (GBA)"
+    elif seller_id == 102 or brand.lower() == "pixellab":
+        shipping_origin = "Depósito Pixellab (CABA)"
+    elif brand:
+        shipping_origin = f"Depósito {brand}"
+    else:
+        shipping_origin = f"Depósito Mayorista #{seller_id}" if seller_id else "Depósito Central"
+
     dispatch_time = "24-48 hs hábiles"
     
     return {

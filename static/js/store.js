@@ -133,13 +133,23 @@ function renderCartDrawer() {
   const packageCount = origins.length;
 
   if (alertEl) {
-    if (packageCount === 1) {
+    if (cart.length === 1) {
+      alertEl.innerHTML = `
+        <div class="logistics-box unified">
+          <i class="fa-solid fa-location-dot"></i>
+          <div>
+            <strong>Despacho Directo</strong>
+            <p>Sale desde <strong>${origins[0]}</strong> directo a tu domicilio.</p>
+          </div>
+        </div>
+      `;
+    } else if (packageCount === 1) {
       alertEl.innerHTML = `
         <div class="logistics-box unified">
           <i class="fa-solid fa-boxes-packing"></i>
           <div>
-            <strong>¡Envío Unificado! (1 solo flete)</strong>
-            <p>Todos tus productos salen del depósito <strong>${origins[0]}</strong> en un único paquete.</p>
+            <strong>¡Mismo Depósito! (1 solo flete)</strong>
+            <p>Todos tus productos salen de <strong>${origins[0]}</strong> en un único paquete.</p>
           </div>
         </div>
       `;
@@ -148,8 +158,8 @@ function renderCartDrawer() {
         <div class="logistics-box multi">
           <i class="fa-solid fa-truck-ramp-box"></i>
           <div>
-            <strong>Despacho Multi-Depósito (${packageCount} bultos)</strong>
-            <p>Tus productos provienen de orígenes distintos: <strong>${origins.join(', ')}</strong>. Se despacharán en paquetes separados.</p>
+            <strong>Despacho Multi-Depósito (${packageCount} paquetes)</strong>
+            <p>Tus productos salen de depósitos distintos: <strong>${origins.join(' y ')}</strong>. Llegarán en fletes separados.</p>
           </div>
         </div>
       `;
@@ -169,10 +179,14 @@ function renderCartDrawer() {
   subtotalEl.innerText = `$${subtotal.toLocaleString('es-AR')}`;
   
   if (shippingEl) {
-    if (shippingCost === 0) {
-      shippingEl.innerHTML = `<span style="color:#10b981; font-weight:700;">¡Bonificado!</span>`;
+    if (cfg.shippingFlatRate > 0) {
+      if (shippingCost === 0) {
+        shippingEl.innerHTML = `<span style="color:#10b981; font-weight:700;">¡Bonificado!</span>`;
+      } else {
+        shippingEl.innerHTML = `$${shippingCost.toLocaleString('es-AR')} <small style="color:#64748b">(${packageCount} paquete${packageCount > 1 ? 's' : ''})</small>`;
+      }
     } else {
-      shippingEl.innerHTML = `$${shippingCost.toLocaleString('es-AR')} <small style="color:#64748b">(${packageCount} paquete${packageCount > 1 ? 's' : ''})</small>`;
+      shippingEl.innerHTML = `<span style="color:#0284c7; font-weight:600; font-size:0.85rem;">A coordinar / comprador</span>`;
     }
   }
 
