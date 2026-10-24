@@ -110,36 +110,7 @@ def init_db():
     for k, v in defaults.items():
         c.execute("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)", (k, v))
         
-    # Si no hay productos, inyectar un par de productos de demostración
-    c.execute("SELECT COUNT(*) FROM products")
-    if c.fetchone()[0] == 0:
-        demo_products = [
-            (
-                "Auriculares Inalámbricos Bluetooth Pro",
-                "Sonido Hi-Fi con cancelación pasiva de ruido, batería de 24 horas y estuche de carga rápida. Compatible con Android y iPhone.",
-                "Tecnología",
-                "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=600&auto=format&fit=crop&q=80",
-                12500.0, 24999.0, 29999.0, 15, "DROP-AUR-01", "https://dropsheable.com.ar", 1, 1, datetime.now().isoformat()
-            ),
-            (
-                "Smartwatch Deportivo Ultra Fit",
-                "Medición de ritmo cardíaco, oxígeno en sangre, podómetro, notificaciones de WhatsApp y llamadas. Resistente a salpicaduras IP68.",
-                "Tecnología",
-                "https://images.unsplash.com/photo-1579586337278-3befd40fd17a?w=600&auto=format&fit=crop&q=80",
-                18000.0, 36500.0, 42000.0, 10, "DROP-SMART-02", "https://dropsheable.com.ar", 1, 1, datetime.now().isoformat()
-            ),
-            (
-                "Botella Térmica Acero Inoxidable 750ml",
-                "Mantiene 24hs frío y 12hs calor. Doble capa de vacío de acero inoxidable 304 libre de BPA. Pico deportivo a prueba de fugas.",
-                "Hogar",
-                "https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=600&auto=format&fit=crop&q=80",
-                8200.0, 18900.0, 0.0, 25, "DROP-BOT-03", "https://dropsheable.com.ar", 1, 1, datetime.now().isoformat()
-            )
-        ]
-        c.executemany("""
-        INSERT INTO products (title, description, category, image_url, cost_price, sale_price, discount_price, stock, supplier_sku, supplier_url, featured, active, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, demo_products)
+        
         
     conn.commit()
     conn.close()
