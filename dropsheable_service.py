@@ -101,13 +101,91 @@ def check_dropsheable_connection(api_key: Optional[str] = None, api_secret: Opti
         }
     }
 
+def _normalize_dropsheable_product(p: Dict[str, Any]) -> Dict[str, Any]:
+    """Converts Dropsheable API product schema to EcoMarvex standard format."""
+    title = p.get("TitlePersonalizado") or p.get("ArticuloOriginal") or p.get("title") or "Producto Dropsheable"
+    sku = p.get("SKU") or p.get("CodigoSKU") or p.get("sku") or f"DSH-{p.get('ID') or p.get('id')}"
+    
+    sale_price = float(p.get("PrecioVenta") or p.get("sale_price") or p.get("suggested_price") or 0.0)
+    margin_pct = float(p.get("MargenAplicado") or p.get("margin_pct") or 0.0)
+    
+    if "cost_price" in p and float(p["cost_price"]) > 0:
+        cost_price = float(p["cost_price"])
+    elif margin_pct > 0 and sale_price > 0:
+        cost_price = round(sale_price / (1.0 + (margin_pct / 100.0)), 2)
+    else:
+        cost_price = round(sale_price * 0.6, 2)
+        
+    stock = int(p.get("StockMayorista") if p.get("StockMayorista") is not None else p.get("stock", 0))
+    
+    # Extract high-res image
+    image_url = ""
+    pics_raw = p.get("PicturesPersonalizadas") or p.get("image_url") or ""
+    if pics_raw:
+        if isinstance(pics_raw, list) and len(pics_raw) > 0:
+            image_url = pics_raw[0]
+        elif isinstance(pics_raw, str):
+            pics_raw = pics_raw.strip()
+            if pics_raw.startswith("["):
+                try:
+                    parsed = json.loads(pics_raw)
+                    if isinstance(parsed, list) and len(parsed) > 0:
+                        image_url = parsed[0]
+                except Exception:
+                    pass
+            elif pics_raw.startswith("http"):
+                image_url = pics_raw
+    if not image_url:
+        image_url = "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600"
+        
+    category = p.get("Categoria") or p.get("CategoryName") or p.get("category") or "General"
+    brand = (p.get("Brand") or p.get("brand") or "").strip()
+    seller_id = p.get("MaySellerID") or p.get("supplier_id") or 0
+    
+    if seller_id == 129:
+        supplier_name = "Mayorista #129 (Perfumes & Fragancias)"
+    elif seller_id == 102 or brand.lower() == "pixellab":
+        supplier_name = "Pixellab (Lámparas & Veladores 3D)"
+    elif brand:
+        supplier_name = f"{brand} (Mayorista #{seller_id})"
+    else:
+        supplier_name = f"Mayorista #{seller_id}" if seller_id else "Dropsheable Mayorista"
+        
+    description = (p.get("DescriptionPersonalizada") or p.get("description") or "").strip()
+    
+    # Determine shipping origin & dispatch time
+    shipping_origin = "Buenos Aires / CABA"
+    dispatch_time = "24-48 hs hábiles"
+    
+    return {
+        "id": p.get("ID") or p.get("id"),
+        "title": title,
+        "sku": sku,
+        "supplier_sku": sku,
+        "cost_price": cost_price,
+        "suggested_price": sale_price,
+        "sale_price": sale_price,
+        "margin_pct": margin_pct,
+        "stock": stock,
+        "category": category,
+        "brand": brand,
+        "supplier_id": seller_id,
+        "supplier_name": supplier_name,
+        "shipping_origin": shipping_origin,
+        "dispatch_time": dispatch_time,
+        "image_url": image_url,
+        "description": description,
+        "mla": p.get("MLA"),
+        "raw": p
+    }
+
 def get_dropsheable_catalog(search: str = "", category: str = "", supplier_id: Optional[int] = None) -> Dict[str, Any]:
     """Retrieves live products from Dropsheable API or returns verified catalog."""
     settings = get_settings()
     api_key = settings.get("dropsheable_api_key", "").strip()
     api_secret = settings.get("dropsheable_api_secret", "").strip()
 
-    endpoint = "/productos?activo=1&limite=100"
+    endpoint = "/productos?limite=100"
     if search:
         endpoint += f"&search={urllib.parse.quote(search)}"
     if supplier_id:
@@ -116,16 +194,24 @@ def get_dropsheable_catalog(search: str = "", category: str = "", supplier_id: O
     live_res = _make_request(endpoint, api_key, api_secret)
     api_products = []
     if live_res.get("success"):
-        api_products = live_res.get("data", {}).get("productos", [])
+        raw_items = live_res.get("data", {}).get("productos", [])
+        api_products = [_normalize_dropsheable_product(p) for p in raw_items]
 
     # Devolver únicamente productos reales de la cuenta Dropsheable (sin placeholders)
     if search:
         s_lower = search.lower()
-        api_products = [p for p in api_products if s_lower in p.get("title", "").lower() or s_lower in p.get("sku", "").lower() or s_lower in p.get("category", "").lower()]
+        api_products = [
+            p for p in api_products 
+            if s_lower in p.get("title", "").lower() or s_lower in p.get("sku", "").lower() or s_lower in p.get("category", "").lower() or s_lower in p.get("brand", "").lower()
+        ]
     if category and category != "Todos":
         api_products = [p for p in api_products if category.lower() in p.get("category", "").lower()]
     if supplier_id:
-        api_products = [p for p in api_products if p.get("supplier_id") == supplier_id]
+        try:
+            sup_id_int = int(supplier_id)
+            api_products = [p for p in api_products if p.get("supplier_id") == sup_id_int]
+        except (ValueError, TypeError):
+            pass
 
     return {
         "source": "dropsheable_live_account",
@@ -137,6 +223,9 @@ def get_dropsheable_catalog(search: str = "", category: str = "", supplier_id: O
 
 def import_product_to_store(product: dict, custom_sale_price: Optional[float] = None) -> Dict[str, Any]:
     """Imports or updates a Dropsheable product directly into the EcoMarvex store."""
+    if "TitlePersonalizado" in product or "PrecioVenta" in product or "ArticuloOriginal" in product or "PicturesPersonalizadas" in product:
+        product = _normalize_dropsheable_product(product)
+
     conn = get_connection()
     c = conn.cursor()
 
