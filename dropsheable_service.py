@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 import urllib.request
 import urllib.error
 import urllib.parse
@@ -118,25 +119,42 @@ def _normalize_dropsheable_product(p: Dict[str, Any]) -> Dict[str, Any]:
         
     stock = int(p.get("StockMayorista") if p.get("StockMayorista") is not None else p.get("stock", 0))
     
-    # Extract high-res image
+    # Extract high-res image (handles malformed JSON and escaped slashes from Dropsheable)
     image_url = ""
-    pics_raw = p.get("PicturesPersonalizadas") or p.get("image_url") or ""
-    if pics_raw:
+    raw_candidates = [
+        p.get("PicturesPersonalizadas"),
+        p.get("PictureURLs"),
+        p.get("image_url"),
+        p.get("Foto")
+    ]
+    for pics_raw in raw_candidates:
+        if not pics_raw:
+            continue
         if isinstance(pics_raw, list) and len(pics_raw) > 0:
-            image_url = pics_raw[0]
+            image_url = str(pics_raw[0]).strip().replace("\\/", "/")
+            break
         elif isinstance(pics_raw, str):
-            pics_raw = pics_raw.strip()
-            if pics_raw.startswith("["):
-                try:
-                    parsed = json.loads(pics_raw)
-                    if isinstance(parsed, list) and len(parsed) > 0:
-                        image_url = parsed[0]
-                except Exception:
-                    pass
-            elif pics_raw.startswith("http"):
-                image_url = pics_raw
+            clean_str = pics_raw.replace("\\/", "/").strip()
+            urls = re.findall(r'https?://[^\s"\'\]]+', clean_str)
+            if urls:
+                image_url = urls[0].strip().rstrip('"\'\\]')
+                break
+
+    # Category and keyword fallback if mayorista provided no image URL
     if not image_url:
-        image_url = "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600"
+        t_low = title.lower()
+        if "shaver" in t_low or "afeitadora" in t_low:
+            image_url = "https://images.unsplash.com/photo-1621607512214-68297480165e?w=800"
+        elif "cortar pelo" in t_low or "patillera" in t_low:
+            image_url = "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=800"
+        elif "velador" in t_low or "lampara" in t_low:
+            image_url = "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=800"
+        elif "perfume" in t_low:
+            image_url = "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=800"
+        elif "sandalia" in t_low or "calzado" in t_low:
+            image_url = "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=800"
+        else:
+            image_url = "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=800"
         
     category = p.get("Categoria") or p.get("CategoryName") or p.get("category") or "General"
     brand = (p.get("Brand") or p.get("brand") or "").strip()

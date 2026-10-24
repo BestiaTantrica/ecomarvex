@@ -799,7 +799,7 @@ async function loadDropsheableCatalog() {
       return `
         <div class="dsh-card">
           <div class="dsh-card-img-wrap">
-            <img src="${prod.image_url}" alt="${prod.title}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600'">
+            <img src="${prod.image_url}" alt="${prod.title}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=600'">
             <span class="dsh-card-origin-tag"><i class="fa-solid fa-location-dot"></i> ${prod.shipping_origin}</span>
             <span class="dsh-card-stock-tag"><i class="fa-solid fa-boxes-stacked"></i> ${prod.stock} u.</span>
           </div>
