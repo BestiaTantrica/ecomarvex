@@ -793,7 +793,7 @@ async function loadDropsheableCatalog() {
     grid.innerHTML = currentDshCatalog.map((prod, index) => {
       const isImported = importedSkus.has(prod.sku);
       const margin = (prod.suggested_price - prod.cost_price).toFixed(0);
-      const marginPct = prod.margin_pct ? Number(prod.margin_pct).toFixed(0) : ((margin / prod.cost_price) * 100).toFixed(0);
+      const marginPct = ((margin / prod.suggested_price) * 100).toFixed(0);
       const encodedProd = encodeURIComponent(JSON.stringify(prod));
 
       return `
