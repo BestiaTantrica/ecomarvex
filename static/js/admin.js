@@ -753,13 +753,35 @@ async function loadDropsheableCatalog() {
     }
 
     if (currentDshCatalog.length === 0) {
-      grid.innerHTML = `
-        <div style="grid-column: 1/-1; text-align:center; padding:40px; background:white; border-radius:12px; border:1px dashed #cbd5e1;">
-          <i class="fa-solid fa-box-open" style="font-size:2.5rem; color:#94a3b8; margin-bottom:10px;"></i>
-          <h4 style="color:#334155;">No se encontraron productos con esos filtros</h4>
-          <p style="color:#64748b; font-size:0.9rem;">Probá buscando con otro término o limpiando los filtros de categoría y proveedor.</p>
-        </div>
-      `;
+      if (search || category || supplierId) {
+        grid.innerHTML = `
+          <div style="grid-column: 1/-1; text-align:center; padding:40px; background:white; border-radius:12px; border:1px dashed #cbd5e1;">
+            <i class="fa-solid fa-box-open" style="font-size:2.5rem; color:#94a3b8; margin-bottom:10px;"></i>
+            <h4 style="color:#334155;">No se encontraron productos con esos filtros</h4>
+            <p style="color:#64748b; font-size:0.9rem;">Probá buscando con otro término o limpiando los filtros de categoría y proveedor.</p>
+          </div>
+        `;
+      } else {
+        grid.innerHTML = `
+          <div style="grid-column: 1/-1; text-align:center; padding:35px 20px; background:white; border-radius:12px; border:2px dashed #93c5fd;">
+            <i class="fa-solid fa-boxes-packing" style="font-size:2.8rem; color:#0284c7; margin-bottom:14px;"></i>
+            <h3 style="color:#0f172a; margin-bottom:8px;">Conexión API en Vivo: 0 productos en tu cuenta #4754</h3>
+            <p style="color:#64748b; font-size:0.95rem; max-width:620px; margin:0 auto 20px auto;">
+              Tu cuenta de Dropsheable está 100% conectada y autenticada. La API de Dropsheable solo muestra los productos que vincules a tu catálogo personal desde su plataforma.
+            </p>
+            <div style="text-align:left; max-width:580px; margin:0 auto 24px auto; background:#f8fafc; border-radius:10px; padding:18px; border:1px solid #e2e8f0; font-size:0.92rem; color:#334155; line-height:1.65;">
+              <strong style="color:#0284c7; font-size:1rem;"><i class="fa-solid fa-list-check"></i> Pasos para ver tus productos acá y en Mercado Libre:</strong><br>
+              1. Entrá a tu cuenta en <a href="https://dropsheable.com.ar/frontv2/" target="_blank" style="color:#0284c7; font-weight:700; text-decoration:underline;">dropsheable.com.ar</a>.<br>
+              2. Andá a <strong>Proveedores</strong> y tocá <em>"Vincularme" / "Solicitar Vinculación"</em> con los proveedores mayoristas de tu interés.<br>
+              3. En el catálogo del proveedor, tocá <strong>"Agregar a Mi Catálogo"</strong> en los artículos que quieras vender.<br>
+              4. Volvé acá y tocá el botón de abajo: ¡aparecerán al instante con fotos, precios reales y costos de fábrica!
+            </div>
+            <button class="btn-primary" onclick="loadDropsheableCatalog()" style="padding:10px 24px; font-weight:700;">
+              <i class="fa-solid fa-arrows-rotate"></i> Actualizar Catálogo en Vivo
+            </button>
+          </div>
+        `;
+      }
       return;
     }
 

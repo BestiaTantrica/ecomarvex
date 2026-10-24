@@ -118,169 +118,21 @@ def get_dropsheable_catalog(search: str = "", category: str = "", supplier_id: O
     if live_res.get("success"):
         api_products = live_res.get("data", {}).get("productos", [])
 
-    # If the user's retailer account has products in Dropsheable, return them
-    if api_products:
-        return {
-            "source": "dropsheable_live_account",
-            "total": len(api_products),
-            "products": api_products
-        }
-
-    # Verified Curated Wholesale Catalog from active Dropsheable suppliers
-    # (TecnoWholesale CABA, Por Algo Paso Ramos Mejia, MayoristaNet, Sina Hogar, etc.)
-    verified_catalog = [
-        {
-            "id": 101,
-            "sku": "DSH-TEC-001",
-            "title": "Auriculares Inalámbricos Pro TWS con Cancelación de Ruido",
-            "description": "Auriculares Bluetooth 5.3 con estuche de carga digital LED, batería de hasta 28hs y cancelación de ruido activa para llamadas nítidas.",
-            "category": "Tecnología & Audio",
-            "image_url": "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=600&auto=format&fit=crop&q=80",
-            "cost_price": 14500.0,
-            "suggested_price": 28990.0,
-            "margin_percentage": 50.0,
-            "stock": 45,
-            "supplier_id": 2,
-            "supplier_name": "TecnoWholesale Argentina",
-            "shipping_origin": "CABA (Capital Federal)",
-            "dispatch_time": "24 hs hábiles",
-            "is_live_account": False
-        },
-        {
-            "id": 102,
-            "sku": "DSH-HOG-002",
-            "title": "Lámpara Sunset Proyectora Cálida Golden Hour",
-            "description": "Lámpara de puesta de sol con lente óptico giratorio 360°, ideal para iluminación ambiental de habitaciones y videos virales en TikTok/Instagram.",
-            "category": "Hogar & Decoración",
-            "image_url": "https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?w=600&auto=format&fit=crop&q=80",
-            "cost_price": 8200.0,
-            "suggested_price": 18500.0,
-            "margin_percentage": 55.0,
-            "stock": 80,
-            "supplier_id": 133,
-            "supplier_name": "Por Algo Paso",
-            "shipping_origin": "GBA Oeste (Ramos Mejía)",
-            "dispatch_time": "24-48 hs hábiles",
-            "is_live_account": False
-        },
-        {
-            "id": 103,
-            "sku": "DSH-AUT-003",
-            "title": "Soporte Magnético Celular para Auto con Carga Inalámbrica Qi",
-            "description": "Soporte magnético ultra fuerte para rejilla de ventilación, carga rápida de 15W y rotación multidireccional con agarre antigolpes.",
-            "category": "Accesorios Auto",
-            "image_url": "https://images.unsplash.com/photo-1584438784894-089d6a62b8fa?w=600&auto=format&fit=crop&q=80",
-            "cost_price": 9800.0,
-            "suggested_price": 21990.0,
-            "margin_percentage": 55.0,
-            "stock": 60,
-            "supplier_id": 3,
-            "supplier_name": "SUCHIN Autopartes",
-            "shipping_origin": "CABA / GBA",
-            "dispatch_time": "24 hs hábiles",
-            "is_live_account": False
-        },
-        {
-            "id": 104,
-            "sku": "DSH-COC-004",
-            "title": "Freidora de Aire Digital Smart 4.5 Litros con Ventana Visor",
-            "description": "Freidora sin aceite con panel táctil digital de 8 programas, ventana visor iluminada y canasta antiadherente libre de BPA de fácil limpieza.",
-            "category": "Electrodomésticos",
-            "image_url": "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=600&auto=format&fit=crop&q=80",
-            "cost_price": 48500.0,
-            "suggested_price": 89900.0,
-            "margin_percentage": 46.0,
-            "stock": 25,
-            "supplier_id": 12,
-            "supplier_name": "Sina Artículos del Hogar",
-            "shipping_origin": "CABA / GBA",
-            "dispatch_time": "24-48 hs hábiles",
-            "is_live_account": False
-        },
-        {
-            "id": 105,
-            "sku": "DSH-FIT-005",
-            "title": "Smartwatch Fit Band Ultra con Monitor de Ritmo y Oxígeno",
-            "description": "Reloj inteligente resistente al agua IP68, pantalla HD color, notificaciones de WhatsApp, más de 30 modos deportivos y batería de 10 días.",
-            "category": "Tecnología & Wearables",
-            "image_url": "https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?w=600&auto=format&fit=crop&q=80",
-            "cost_price": 12900.0,
-            "suggested_price": 27500.0,
-            "margin_percentage": 53.0,
-            "stock": 50,
-            "supplier_id": 7,
-            "supplier_name": "MayoristaNet",
-            "shipping_origin": "CABA (Capital Federal)",
-            "dispatch_time": "24 hs hábiles",
-            "is_live_account": False
-        },
-        {
-            "id": 106,
-            "sku": "DSH-HOG-006",
-            "title": "Humidificador Ultrasónico Aromaterapia LED Efecto Llama",
-            "description": "Difusor de aceites esenciales ultrasónico silencioso con efecto visual de fuego cálido, temporizador y apagado automático sin agua.",
-            "category": "Hogar & Decoración",
-            "image_url": "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=600&auto=format&fit=crop&q=80",
-            "cost_price": 11200.0,
-            "suggested_price": 24900.0,
-            "margin_percentage": 55.0,
-            "stock": 40,
-            "supplier_id": 133,
-            "supplier_name": "Por Algo Paso",
-            "shipping_origin": "GBA Oeste (Ramos Mejía)",
-            "dispatch_time": "24 hs hábiles",
-            "is_live_account": False
-        },
-        {
-            "id": 107,
-            "sku": "DSH-BTY-007",
-            "title": "Cepillo Secador y Voluminizador de Pelo 3 en 1 Iónico",
-            "description": "Seca, alisa y da volumen en una sola pasada. Cerdas mixtas anti-frizz con revestimiento cerámico de calor uniforme para proteger el cabello.",
-            "category": "Belleza & Cuidado Personal",
-            "image_url": "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&auto=format&fit=crop&q=80",
-            "cost_price": 16800.0,
-            "suggested_price": 34990.0,
-            "margin_percentage": 52.0,
-            "stock": 35,
-            "supplier_id": 131,
-            "supplier_name": "Lumina",
-            "shipping_origin": "GBA Oeste (Ituzaingó)",
-            "dispatch_time": "24-48 hs hábiles",
-            "is_live_account": False
-        },
-        {
-            "id": 108,
-            "sku": "DSH-FIT-008",
-            "title": "Pistola de Masaje Muscular Percusión con 6 Cabezales",
-            "description": "Masajeador profesional de tejido profundo para recuperación deportiva y alivio de tensiones, con motor de alta potencia y 30 velocidades ajustables.",
-            "category": "Deportes & Salud",
-            "image_url": "https://images.unsplash.com/photo-1518611012118-696072aa579a?w=600&auto=format&fit=crop&q=80",
-            "cost_price": 23500.0,
-            "suggested_price": 48900.0,
-            "margin_percentage": 52.0,
-            "stock": 30,
-            "supplier_id": 50,
-            "supplier_name": "Proveedora de Insumos Médicos SA",
-            "shipping_origin": "CABA (Capital Federal)",
-            "dispatch_time": "24 hs hábiles",
-            "is_live_account": False
-        }
-    ]
-
-    # Filter catalog if filters provided
-    filtered = verified_catalog
+    # Devolver únicamente productos reales de la cuenta Dropsheable (sin placeholders)
     if search:
         s_lower = search.lower()
-        filtered = [p for p in filtered if s_lower in p["title"].lower() or s_lower in p["sku"].lower() or s_lower in p["category"].lower()]
+        api_products = [p for p in api_products if s_lower in p.get("title", "").lower() or s_lower in p.get("sku", "").lower() or s_lower in p.get("category", "").lower()]
     if category and category != "Todos":
-        filtered = [p for p in filtered if category.lower() in p["category"].lower()]
+        api_products = [p for p in api_products if category.lower() in p.get("category", "").lower()]
     if supplier_id:
-        filtered = [p for p in filtered if p["supplier_id"] == supplier_id]
+        api_products = [p for p in api_products if p.get("supplier_id") == supplier_id]
 
     return {
-        "source": "dropsheable_verified_suppliers",
-        "total": len(filtered),
-        "products": filtered
+        "source": "dropsheable_live_account",
+        "total": len(api_products),
+        "products": api_products,
+        "is_empty": len(api_products) == 0,
+        "message": "Tu cuenta de Dropsheable (MinSeller #4754) está conectada con éxito. Vincula tus proveedores o productos en dropsheable.com.ar para verlos aquí."
     }
 
 def import_product_to_store(product: dict, custom_sale_price: Optional[float] = None) -> Dict[str, Any]:

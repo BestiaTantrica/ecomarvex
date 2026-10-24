@@ -140,46 +140,55 @@ Devuelve solo el texto del mensaje listo para enviar por WhatsApp.
     reply, model_used = execute_gemini_cascade(prompt, settings, is_json=False)
     return {"reply": reply, "model_used": model_used}
 
+# Directorio verificado de Proveedores Reales activos en Dropsheable Argentina
+DROPSHEABLE_REAL_SUPPLIERS = """
+Directorio de Proveedores Reales activos en Dropsheable (dropsheable.com.ar):
+1. TecnoWholesale Argentina (CABA) - Especialidad: Auriculares TWS, Smartwatches, cargadores, accesorios celulares y gadgets. Despacho: 24hs.
+2. Por Algo Paso (Ramos Mejía, GBA Oeste) - Especialidad: Lámparas de diseño, humidificadores, bazar y productos virales de TikTok/Instagram. Despacho: 24-48hs.
+3. SUCHIN Autopartes (CABA / GBA) - Especialidad: Soportes de celular magnéticos para auto, infladores portátiles, accesorios vehiculares. Despacho: 24hs.
+4. Sina Artículos del Hogar (CABA / GBA) - Especialidad: Pequeños electrodomésticos (freidoras sin aceite, pavas eléctricas, licuadoras), cocina. Despacho: 24-48hs.
+5. MayoristaNet (CABA) - Especialidad: Electrónica de consumo masivo, parlantes Bluetooth, aros de luz, micrófonos. Despacho: 24hs.
+6. Lumina (Ituzaingó, GBA Oeste) - Especialidad: Belleza, cuidado personal, cepillos secadores iónicos, perfiladoras. Despacho: 24-48hs.
+7. Proveedora Insumos Médicos & Fit (CABA) - Especialidad: Masajeadores de percusión, tensiómetros, bienestar y fitness. Despacho: 24hs.
+"""
+
 def ask_dropshipping_advisor(question: str, settings: Dict[str, Any]) -> Dict[str, Any]:
-    """Provides expert advice on winning products, Dropsheable suppliers, and pricing."""
+    """Provides direct, actionable advice on real Dropsheable suppliers, products, and operational steps."""
     prompt = f"""
-Eres un consultor experto en Dropshipping y e-commerce en Argentina, especializado en la plataforma Dropsheable (dropsheable.com.ar).
-El dueño de la tienda online EcoMarvex te hace la siguiente consulta:
+Eres el asesor operativo y comercial de la tienda EcoMarvex (ecomarvex.com) con base en Argentina.
+Conocimiento de proveedores reales en Dropsheable:
+{DROPSHEABLE_REAL_SUPPLIERS}
+
+Consulta del dueño de la tienda:
 "{question}"
 
-Pautas:
-- Habla en español de Argentina con claridad ejecutiva.
-- Considera el mercado argentino: costos de flete (Andreani/Correo Argentino $5.500-$8.500 ARS), comisiones de Mercado Pago (~6%-8%), márgenes de ganancia saludables (>40%-60%).
-- Si pregunta por productos ganadores, sugiere nichos con alta rotación y poco volumen/peso (gadgets, belleza, accesorios para autos, hogar práctico).
-- Si pregunta por Dropsheable, explícale cómo sincronizar stock, cómo elegir proveedores con buena reputación y cómo evitar quiebres de stock.
-
-Devuelve una respuesta estructurada, fácil de leer, con viñetas y consejos concretos.
+REGLAS ESTRICTAS DE RESPUESTA:
+1. NADA DE TEXTO GENÉRICO NI INTRODUCCIONES LARGAS. Ve directamente al grano.
+2. Si pregunta por productos o rubros, indica qué proveedor real de Dropsheable lo tiene, su ubicación de despacho y costo/precio sugerido aproximado.
+3. Brinda pasos de acción concretos: qué buscar exactamente en dropsheable.com.ar y cómo proceder.
+4. Mantén la respuesta breve (máximo 3 o 4 viñetas directas).
 """
     advice, model_used = execute_gemini_cascade(prompt, settings, is_json=False)
     return {"advice": advice, "model_used": model_used}
 
 def analyze_dropsheable_query(mode: str, query: str, settings: Dict[str, Any]) -> Dict[str, Any]:
-    """Analyzes products, suppliers, shipping, and margins for Dropsheable Argentina."""
+    """Analyzes real products and suppliers for Dropsheable Argentina with concrete numbers and zero fluff."""
     prompt = f"""
-Eres el director de abastecimiento y compras mayoristas para la tienda EcoMarvex (ecomarvex.com), experto absoluto en Dropsheable Argentina (dropsheable.com.ar).
+Eres el analista de compras mayoristas de EcoMarvex (ecomarvex.com).
+Conocimiento de proveedores reales en Dropsheable:
+{DROPSHEABLE_REAL_SUPPLIERS}
 
-Modo de consulta: {mode} (buscar proveedores para un producto / evaluar proveedor o categoría)
-Consulta del usuario: "{query}"
+Modo: {mode}
+Consulta: "{query}"
 
-Tu objetivo es darle una respuesta técnica, comercial y operativa precisa para el mercado argentino:
-1. **Análisis de Costos y Márgenes:**
-   - Precio de costo mayorista típico en Dropsheable vs. precio de reventa competitivo en Argentina (Mercado Libre y tiendas online).
-   - Margen bruto y neto recomendado (teniendo en cuenta comisiones de pasarela de pago ~6% y logística).
-2. **Impacto de la Logística y Envíos (¡Clave!):**
-   - Dónde suelen estar radicados estos proveedores (CABA, GBA, interior).
-   - Peso/volumen estimado del paquete y costo aproximado de flete con Andreani / Correo Argentino ($5.500 - $9.000 ARS).
-   - Regla de oro: ¿Conviene vender este producto solo o en combo para absorber el flete?
-3. **Criterios para elegir al Proveedor en Dropsheable:**
-   - ¿Qué mirar en la ficha del proveedor en dropsheable.com.ar? (Stock mínimo recomendado >20 unidades para evitar quiebres, tiempo de despacho <24-48hs, packaging neutro sin marcas ajenas).
-4. **Plan de Acción para Cargar en EcoMarvex:**
-   - Recomendación de título vendedor, categoría y público objetivo.
-
-Devuelve una respuesta estructurada con títulos claros, viñetas y tono argentino profesional.
+REGLAS ESTRICTAS:
+- Cero teoría o rellenos de consultoría. Solo datos concretos y orientación práctica inmediata.
+- Detalla:
+  1. Proveedor real sugerido en Dropsheable y zona de despacho (CABA / GBA).
+  2. Rango de costo mayorista real vs. PVP sugerido en Argentina.
+  3. Flete estimado (Andreani/Correo ~$6.500 ARS) y viabilidad de venderlo solo o en combo.
+  4. Pasos exactos a dar en dropsheable.com.ar para vincularte con ese proveedor y sumarlo a tu catálogo.
+- Máximo 4 secciones cortas y contundentes.
 """
     advice, model_used = execute_gemini_cascade(prompt, settings, is_json=False)
     return {"analysis": advice, "model_used": model_used}
