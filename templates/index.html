@@ -7,10 +7,31 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/css/style.css?v=9">
+  <link rel="stylesheet" href="/static/css/style.css?v=13">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Metadatos Open Graph / Redes Sociales (WhatsApp, TikTok, Instagram, Facebook) -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="{{ settings.store_name }} | Tienda Online Argentina">
+  <meta property="og:description" content="{{ settings.store_description }} • Envíos a todo el país • 10% OFF extra por Transferencia Bancaria">
+  <meta property="og:url" content="https://ecomarvex.com/">
+  <meta property="og:image" content="https://ecomarvex.com/static/images/ecomarvex_logo_500x500.png">
+  <meta property="og:site_name" content="{{ settings.store_name }}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ settings.store_name }} | Tienda Online Argentina">
+  <meta name="twitter:description" content="{{ settings.store_description }} • 10% OFF por Transferencia">
+  <meta name="twitter:image" content="https://ecomarvex.com/static/images/ecomarvex_banner_1180_completo.png">
 </head>
 <body>
+
+  <!-- Barra Promocional Superior -->
+  <div class="promo-bar">
+    <div class="container promo-content">
+      <span><i class="fa-solid fa-truck-fast"></i> <strong>Envío Gratis</strong> en compras desde $80.000</span>
+      <span class="promo-sep">•</span>
+      <span><i class="fa-solid fa-bolt"></i> <strong>10% OFF EXTRA</strong> pagando con Transferencia Bancaria</span>
+    </div>
+  </div>
 
   <!-- Top Bar -->
   <div class="top-bar">
@@ -53,9 +74,9 @@
         <h1>Productos seleccionados para tu día a día</h1>
         <p>{{ settings.store_description }}</p>
         <div class="hero-features">
+          <div class="feat-item"><i class="fa-solid fa-truck-fast"></i> Envío Gratis desde $80.000</div>
+          <div class="feat-item"><i class="fa-solid fa-bolt"></i> 10% OFF Transferencia</div>
           <div class="feat-item"><i class="fa-solid fa-shield-check"></i> Compra 100% Segura</div>
-          <div class="feat-item"><i class="fa-solid fa-credit-card"></i> Cuotas y Transferencia</div>
-          <div class="feat-item"><i class="fa-solid fa-rotate-left"></i> Garantía de Entrega</div>
         </div>
       </div>
     </div>
@@ -73,7 +94,7 @@
   <main class="container catalog-section">
     <div id="productsGrid" class="products-grid">
       {% for p in products %}
-      <div class="product-card" data-category="{{ p.category }}" data-title="{{ p.title|lower }}">
+      <div class="product-card" data-category="{{ p.category }}" data-title="{{ p.title|lower }}" onclick="openProductModal({{ p.id }})">
         <div class="card-img-wrap">
           {% if p.image_url %}
             <img src="{{ p.image_url }}" alt="{{ p.title }}" loading="lazy">
@@ -84,6 +105,9 @@
           {% if p.featured %}
             <span class="badge-featured">⭐ Destacado</span>
           {% endif %}
+          <span class="quick-view-badge">
+            <i class="fa-solid fa-eye"></i> Ver Detalles
+          </span>
         </div>
         <div class="card-body">
           <h3 class="card-title">{{ p.title }}</h3>
@@ -98,13 +122,17 @@
             {% endif %}
             <span class="main-price">${{ "{:,.0f}".format(p.sale_price) }}</span>
           </div>
-          <div class="card-footer">
+          <div class="transfer-price-tag">
+            <i class="fa-solid fa-bolt"></i> ${{ "{:,.0f}".format(p.sale_price * 0.90) }} con Transferencia (10% OFF)
+          </div>
+          <div class="card-footer" onclick="event.stopPropagation()">
             <span class="stock-info"><i class="fa-solid fa-circle-check"></i> Stock disponible</span>
-            <button class="add-to-cart-btn" onclick="addToCart({{ p.id }}, '{{ p.title|replace("'", "\\'") }}', {{ p.sale_price }}, '{{ p.image_url }}', '{{ p.shipping_origin or "CABA / GBA" }}', '{{ p.supplier_name or "Dropsheable Mayorista" }}')">
+            <button class="add-to-cart-btn" onclick="event.stopPropagation(); addToCart({{ p.id }}, '{{ p.title|replace("'", "\\'") }}', {{ p.sale_price }}, '{{ p.image_url }}', '{{ p.shipping_origin or "CABA / GBA" }}', '{{ p.supplier_name or "Dropsheable Mayorista" }}')">
               <i class="fa-solid fa-plus"></i> Agregar
             </button>
           </div>
         </div>
+      </div>
       {% else %}
       <div style="grid-column: 1/-1; text-align:center; padding:60px 20px; background:white; border-radius:16px; border:1px dashed #cbd5e1; margin: 20px 0;">
         <i class="fa-solid fa-boxes-stacked" style="font-size:3rem; color:#94a3b8; margin-bottom:14px;"></i>
@@ -149,6 +177,107 @@
       </button>
     </div>
   </aside>
+
+  <!-- Modal Detalle de Producto / Quick View -->
+  <div id="productModal" class="modal-overlay product-modal-overlay" onclick="closeProductModal(event)">
+    <div class="product-modal-content" onclick="event.stopPropagation()">
+      <button class="close-product-modal-btn" onclick="closeProductModal()" aria-label="Cerrar"><i class="fa-solid fa-xmark"></i></button>
+      
+      <div class="product-modal-grid">
+        <!-- Columna Izquierda: Galería de Fotos y Confianza -->
+        <div class="product-gallery-col">
+          <div class="product-main-img-box">
+            <img id="modalMainImg" src="" alt="Producto" loading="lazy">
+            <span id="modalCatBadge" class="modal-cat-badge">Categoría</span>
+          </div>
+          
+          <div id="modalThumbnails" class="product-thumbnails-bar">
+            <!-- Miniaturas dinámicas -->
+          </div>
+          
+          <div class="product-trust-badges">
+            <div class="trust-badge-item">
+              <i class="fa-solid fa-shield-halved"></i>
+              <div>
+                <strong>Garantía de Fábrica</strong>
+                <span>30 días ante defectos</span>
+              </div>
+            </div>
+            <div class="trust-badge-item">
+              <i class="fa-solid fa-truck-fast"></i>
+              <div>
+                <strong>Despacho Directo</strong>
+                <span>Desde el depósito oficial</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Columna Derecha: Información, Especificaciones y Compra -->
+        <div class="product-info-col">
+          <div class="modal-logistics-tags">
+            <span id="modalOriginTag" class="origin-tag"><i class="fa-solid fa-location-dot"></i> Origen</span>
+            <span id="modalDispatchTag" class="dispatch-tag"><i class="fa-solid fa-clock"></i> 24-48 hs hábiles</span>
+            <span class="stock-pill"><i class="fa-solid fa-check"></i> Stock Disponible</span>
+          </div>
+
+          <h2 id="modalTitle" class="modal-product-title">Título del Producto</h2>
+          <div id="modalSupplier" class="modal-supplier-info">
+            <i class="fa-solid fa-warehouse"></i> <span id="modalSupplierName">Dropsheable Mayorista</span> • <span id="modalSku">SKU: DSH-000</span>
+          </div>
+
+          <div class="modal-pricing-box">
+            <div class="modal-price-row">
+              <span id="modalOldPrice" class="modal-old-price">$0</span>
+              <span id="modalSalePrice" class="modal-sale-price">$0</span>
+              <span id="modalDiscountBadge" class="modal-discount-badge">¡OFERTA!</span>
+            </div>
+            <div id="modalTransferBadge" class="modal-transfer-badge">
+              <i class="fa-solid fa-bolt"></i>
+              <span><strong>$<span id="modalTransferPrice">0</span></strong> con Transferencia</span>
+              <span class="pill-10off">10% OFF</span>
+            </div>
+            <div class="modal-payment-hints">
+              <i class="fa-solid fa-credit-card"></i> Pagos con <strong>Mercado Pago</strong> o <strong>Transferencia Bancaria</strong>
+            </div>
+          </div>
+
+          <!-- Selector de Cantidad y Botón Comprar -->
+          <div class="modal-buy-section">
+            <div class="qty-selector-wrap">
+              <label>Cantidad:</label>
+              <div class="qty-stepper">
+                <button type="button" onclick="changeModalQty(-1)"><i class="fa-solid fa-minus"></i></button>
+                <input type="number" id="modalQtyInput" value="1" min="1" max="99" readonly>
+                <button type="button" onclick="changeModalQty(1)"><i class="fa-solid fa-plus"></i></button>
+              </div>
+            </div>
+            <button id="modalAddToCartBtn" class="modal-add-cart-btn" onclick="addModalProductToCart()">
+              <i class="fa-solid fa-cart-plus"></i> Agregar al Carrito
+            </button>
+          </div>
+
+          <a id="modalWhatsAppBtn" href="#" target="_blank" class="modal-whatsapp-btn">
+            <i class="fa-brands fa-whatsapp"></i> Consultar por WhatsApp
+          </a>
+
+          <!-- Caja de Envíos y Logística -->
+          <div class="modal-shipping-box">
+            <h4><i class="fa-solid fa-box-open"></i> Logística y Envíos</h4>
+            <p><strong>Despacho directo:</strong> Se envía por <strong>Andreani</strong> o <strong>Correo Argentino</strong> con embalaje de seguridad individual y código de seguimiento oficial.</p>
+          </div>
+
+          <!-- Descripción y Especificaciones Completas -->
+          <div class="modal-desc-box">
+            <h4><i class="fa-solid fa-circle-info"></i> Descripción y Especificaciones</h4>
+            <div id="modalFullDescription" class="modal-full-description">
+              <!-- Descripción completa preservando saltos de línea -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Checkout Modal -->
   <div id="checkoutModal" class="modal-overlay">
@@ -203,7 +332,7 @@
           <h4><i class="fa-solid fa-wallet"></i> Medio de Pago</h4>
           <div class="payment-options">
             <label class="pay-option">
-              <input type="radio" name="payMethod" value="mercadopago" checked>
+              <input type="radio" name="payMethod" value="mercadopago" checked onchange="updateCheckoutPaymentSummary()">
               <div class="pay-card">
                 <i class="fa-solid fa-credit-card"></i>
                 <div>
@@ -214,18 +343,18 @@
             </label>
 
             <label class="pay-option">
-              <input type="radio" name="payMethod" value="transferencia">
+              <input type="radio" name="payMethod" value="transferencia" onchange="updateCheckoutPaymentSummary()">
               <div class="pay-card">
                 <i class="fa-solid fa-building-columns"></i>
                 <div>
-                  <strong>Transferencia Bancaria</strong>
-                  <span>Pagá directo con Alias / CBU</span>
+                  <strong>Transferencia Bancaria <span class="badge-off-tag">10% OFF</span></strong>
+                  <span>Pagá directo con Alias / CBU con 10% de descuento automático</span>
                 </div>
               </div>
             </label>
 
             <label class="pay-option">
-              <input type="radio" name="payMethod" value="whatsapp">
+              <input type="radio" name="payMethod" value="whatsapp" onchange="updateCheckoutPaymentSummary()">
               <div class="pay-card">
                 <i class="fa-brands fa-whatsapp"></i>
                 <div>
@@ -242,8 +371,27 @@
           <textarea id="orderNotes" rows="2" placeholder="Indicaciones para la entrega o despacho..."></textarea>
         </div>
 
+        <div class="checkout-summary-box">
+          <div class="summary-line">
+            <span>Subtotal de productos:</span>
+            <span id="checkoutSubtotal">$0</span>
+          </div>
+          <div class="summary-line discount-row" id="checkoutDiscountRow" style="display: none; color: #16a34a;">
+            <span><i class="fa-solid fa-bolt"></i> Descuento Transferencia (10% OFF):</span>
+            <span id="checkoutDiscount">-$0</span>
+          </div>
+          <div class="summary-line">
+            <span>Envío a domicilio:</span>
+            <span id="checkoutShipping">$0</span>
+          </div>
+          <div class="summary-line total-line">
+            <span>Total a Pagar:</span>
+            <span id="checkoutTotal">$0</span>
+          </div>
+        </div>
+
         <div class="modal-footer">
-          <div class="total-badge">Total a Pagar: <strong id="modalTotal">$0</strong></div>
+          <div class="total-badge">Total: <strong id="modalTotal">$0</strong></div>
           <button type="submit" id="submitOrderBtn" class="confirm-order-btn">
             Confirmar y Pagar
           </button>
@@ -308,14 +456,20 @@
     </button>
   </div>
 
+  <script id="productsCatalogData" type="application/json">
+    {{ products|tojson }}
+  </script>
+
   <script>
     window.STORE_CONFIG = {
       storeName: {{ settings.store_name|tojson }},
+      whatsappPhone: {{ settings.whatsapp_phone|tojson }},
       shippingFlatRate: {{ (settings.shipping_flat_rate or 0)|float }},
-      freeShippingMin: {{ (settings.free_shipping_min or 0)|float }},
+      freeShippingMin: {{ (settings.free_shipping_min or 80000)|float }},
+      bankTransferDiscountPct: {{ (settings.bank_transfer_discount_pct or 10)|float }},
       shippingPolicyText: {{ (settings.shipping_policy_text or '')|tojson }}
     };
   </script>
-  <script src="/static/js/store.js?v=9"></script>
+  <script src="/static/js/store.js?v=13"></script>
 </body>
 </html>

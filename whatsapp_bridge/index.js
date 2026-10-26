@@ -83,38 +83,39 @@ async function startWhatsApp() {
 
       // Procesar respuesta con el cerebro Gemini
       try {
-        // Enviar presencia "escribiendo..."
-        await sock.sendPresenceUpdate('composing', remoteJid);
-
-        // Llamar al endpoint local de FastAPI
+        // Llamar al endpoint local de FastAPI verificando remitente y contenido
         const response = await fetch(API_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ customer_message: text })
+          body: JSON.stringify({ customer_message: text, sender_jid: remoteJid })
         });
 
         if (!response.ok) {
           console.error('[WhatsApp] Error desde FastAPI /api/admin/ai/whatsapp-reply');
-          await sock.sendPresenceUpdate('paused', remoteJid);
           continue;
         }
 
         const data = await response.json();
         const replyText = data.reply;
 
-        if (replyText) {
-          // Simular delay de tipeo humano (3.5 a 5.5 segundos)
-          const delayMs = Math.floor(Math.random() * 2000) + 3500;
-          console.log(`[WhatsApp] Esperando delay humano de ${delayMs}ms antes de enviar...`);
-          await new Promise((resolve) => setTimeout(resolve, delayMs));
-
-          await sock.sendMessage(remoteJid, { text: replyText }, { quoted: msg });
-          console.log(`[WhatsApp] Respuesta enviada con éxito a ${remoteJid}`);
+        if (data.ignored || !replyText || replyText.trim() === 'IGNORAR' || replyText.trim().startsWith('IGNORAR')) {
+          console.log(`[WhatsApp] Mensaje personal/familiar de ${remoteJid} IGNORADO con éxito (Razón: ${data.reason || 'personal'}). No se responde.`);
+          continue;
         }
 
+        // Si llegó acá, es un comprador real de la tienda
+        console.log(`[WhatsApp] Consulta de cliente confirmada desde ${remoteJid}. Enviando presencia y respuesta comercial...`);
+        await sock.sendPresenceUpdate('composing', remoteJid);
+
+        // Simular delay de tipeo humano (3.5 a 5.5 segundos)
+        const delayMs = Math.floor(Math.random() * 2000) + 3500;
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+
+        await sock.sendMessage(remoteJid, { text: replyText }, { quoted: msg });
+        console.log(`[WhatsApp] Respuesta enviada con éxito a ${remoteJid}`);
         await sock.sendPresenceUpdate('paused', remoteJid);
       } catch (err) {
-        console.error('[WhatsApp] Error respondiendo mensaje:', err);
+        console.error('[WhatsApp] Error procesando mensaje:', err);
       }
     }
   });

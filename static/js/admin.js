@@ -389,6 +389,9 @@ async function loadSettings() {
     if (document.getElementById('waAutoReplyToggle')) {
       document.getElementById('waAutoReplyToggle').checked = s.whatsapp_auto_reply !== '0';
     }
+    if (document.getElementById('cfgWaIgnoredNumbers')) {
+      document.getElementById('cfgWaIgnoredNumbers').value = s.whatsapp_ignored_numbers || '';
+    }
     checkWhatsAppStatus();
   } catch (e) {
     console.error("Error cargando configuración:", e);
@@ -414,7 +417,8 @@ async function saveSettings() {
     gemini_api_key_backup: document.getElementById('cfgGeminiKeyBackup') ? document.getElementById('cfgGeminiKeyBackup').value : '',
     dropsheable_api_key: document.getElementById('cfgDropsheableKey') ? document.getElementById('cfgDropsheableKey').value : '',
     dropsheable_api_secret: document.getElementById('cfgDropsheableSecret') ? document.getElementById('cfgDropsheableSecret').value : '',
-    dropsheable_api_token: document.getElementById('cfgDropsheableKey') ? document.getElementById('cfgDropsheableKey').value : ''
+    dropsheable_api_token: document.getElementById('cfgDropsheableKey') ? document.getElementById('cfgDropsheableKey').value : '',
+    whatsapp_ignored_numbers: document.getElementById('cfgWaIgnoredNumbers') ? document.getElementById('cfgWaIgnoredNumbers').value : ''
   };
 
   try {

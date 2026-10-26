@@ -42,7 +42,8 @@ def init_db():
     for col, col_def in [
         ("supplier_name", "TEXT DEFAULT 'Dropsheable Mayorista'"),
         ("shipping_origin", "TEXT DEFAULT 'CABA / GBA'"),
-        ("dispatch_time", "TEXT DEFAULT '24-48 hs hábiles'")
+        ("dispatch_time", "TEXT DEFAULT '24-48 hs hábiles'"),
+        ("images_json", "TEXT DEFAULT '[]'")
     ]:
         try:
             c.execute(f"ALTER TABLE products ADD COLUMN {col} {col_def}")
@@ -96,7 +97,8 @@ def init_db():
         "bank_holder": "",
         "bank_name": "Mercado Pago / Banco",
         "shipping_flat_rate": "0",
-        "free_shipping_min": "0",
+        "free_shipping_min": "80000",
+        "bank_transfer_discount_pct": "10",
         "shipping_policy_text": "Envío a convenir / a cargo del comprador (Andreani o Correo Argentino a domicilio o sucursal)",
         "currency_symbol": "$",
         "gemini_api_key": os.getenv("GEMINI_API_KEY", ""),
@@ -104,7 +106,8 @@ def init_db():
         "dropsheable_api_token": "",
         "dropsheable_api_key": "",
         "dropsheable_api_secret": "",
-        "whatsapp_auto_reply": "1"
+        "whatsapp_auto_reply": "1",
+        "whatsapp_ignored_numbers": ""
     }
     
     for k, v in defaults.items():

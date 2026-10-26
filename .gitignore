@@ -36,3 +36,10 @@ web_logs*.txt
 .DS_Store
 .idea/
 .vscode/
+
+# Content Factory Outputs
+content_factory/output/
+content_factory/assets/*.mp4
+content_factory/assets/*.mp3
+content_factory/assets/*.vtt
+content_factory/assets/*.txt

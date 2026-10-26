@@ -72,13 +72,22 @@ class ProductCreateUpdate(BaseModel):
 # ==========================================
 # RUTAS PÚBLICAS (TIENDA STOREFRONT)
 # ==========================================
-@app.get("/", response_class=HTMLResponse)
+@app.api_route("/", methods=["GET", "HEAD"], response_class=HTMLResponse)
 async def index_page(request: Request):
     settings = get_settings()
     conn = get_connection()
     c = conn.cursor()
     c.execute("SELECT * FROM products WHERE active=1 ORDER BY featured DESC, id DESC")
     products = [dict(row) for row in c.fetchall()]
+    
+    for p in products:
+        if p.get("images_json"):
+            try:
+                p["images"] = json.loads(p["images_json"])
+            except Exception:
+                p["images"] = [p["image_url"]] if p.get("image_url") else []
+        else:
+            p["images"] = [p["image_url"]] if p.get("image_url") else []
     
     # Categorías únicas
     c.execute("SELECT DISTINCT category FROM products WHERE active=1")
@@ -92,17 +101,48 @@ async def index_page(request: Request):
         "categories": categories
     })
 
+@app.get("/producto/{product_id}")
+async def product_page_redirect(product_id: int):
+    return RedirectResponse(url=f"/?producto={product_id}")
+
 @app.get("/api/products")
 async def get_products(category: Optional[str] = None):
     conn = get_connection()
     c = conn.cursor()
     if category and category != "Todos":
-        c.execute("SELECT id, title, description, category, image_url, sale_price, discount_price, stock, featured FROM products WHERE active=1 AND category=? ORDER BY id DESC", (category,))
+        c.execute("SELECT * FROM products WHERE active=1 AND category=? ORDER BY id DESC", (category,))
     else:
-        c.execute("SELECT id, title, description, category, image_url, sale_price, discount_price, stock, featured FROM products WHERE active=1 ORDER BY featured DESC, id DESC")
+        c.execute("SELECT * FROM products WHERE active=1 ORDER BY featured DESC, id DESC")
     products = [dict(row) for row in c.fetchall()]
     conn.close()
+    for p in products:
+        if p.get("images_json"):
+            try:
+                p["images"] = json.loads(p["images_json"])
+            except Exception:
+                p["images"] = [p["image_url"]] if p.get("image_url") else []
+        else:
+            p["images"] = [p["image_url"]] if p.get("image_url") else []
     return products
+
+@app.get("/api/products/{product_id}")
+async def get_product_detail(product_id: int):
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute("SELECT * FROM products WHERE id=? AND active=1", (product_id,))
+    row = c.fetchone()
+    conn.close()
+    if not row:
+        raise HTTPException(status_code=404, detail="Producto no encontrado")
+    prod = dict(row)
+    if prod.get("images_json"):
+        try:
+            prod["images"] = json.loads(prod["images_json"])
+        except Exception:
+            prod["images"] = [prod["image_url"]] if prod.get("image_url") else []
+    else:
+        prod["images"] = [prod["image_url"]] if prod.get("image_url") else []
+    return prod
 
 @app.post("/api/checkout")
 async def create_checkout(data: CheckoutRequest):
@@ -168,6 +208,17 @@ async def create_checkout(data: CheckoutRequest):
         
     total = subtotal + shipping_cost
     
+    # Descuento por Transferencia Bancaria Directa (0% comisiones)
+    discount_amount = 0.0
+    try:
+        transfer_discount_pct = float(settings.get("bank_transfer_discount_pct") or 10.0)
+    except Exception:
+        transfer_discount_pct = 10.0
+
+    if data.payment_method == "transferencia" and transfer_discount_pct > 0:
+        discount_amount = round(subtotal * (transfer_discount_pct / 100.0), 2)
+        total = max(0.0, round(total - discount_amount, 2))
+    
     order_code = f"PED-{uuid.uuid4().hex[:6].upper()}"
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
@@ -191,6 +242,8 @@ async def create_checkout(data: CheckoutRequest):
     # Procesar según método de pago
     response_payload = {
         "order_code": order_code,
+        "subtotal": subtotal,
+        "discount_amount": discount_amount,
         "total": total,
         "payment_method": data.payment_method
     }
@@ -267,10 +320,13 @@ async def create_checkout(data: CheckoutRequest):
     # 3. TRANSFERENCIA
     elif data.payment_method == "transferencia":
         response_payload["bank_info"] = {
-            "bank_name": settings.get("bank_name"),
-            "bank_holder": settings.get("bank_holder"),
-            "bank_cbu": settings.get("bank_cbu"),
-            "bank_alias": settings.get("bank_alias")
+            "bank_name": settings.get("bank_name", "Mercado Pago"),
+            "bank_holder": settings.get("bank_holder", "Tomas Reis"),
+            "bank_cbu": settings.get("bank_cbu", "0000003100017567089887"),
+            "bank_alias": settings.get("bank_alias", "vida.rucula"),
+            "discount_pct": transfer_discount_pct,
+            "discount_amount": discount_amount,
+            "final_amount": total
         }
         
     return response_payload
@@ -461,13 +517,31 @@ async def admin_generate_content(payload: dict):
 async def admin_ai_whatsapp(payload: dict):
     message = payload.get("customer_message", "").strip()
     product_title = payload.get("product_title", "").strip()
+    sender_jid = payload.get("sender_jid", "").strip()
     if not message:
         raise HTTPException(status_code=400, detail="El mensaje del cliente no puede estar vacío.")
     
     settings = get_settings()
+    
+    # 1. Si la auto-respuesta está apagada en el panel, ignorar silenciosamente
+    if settings.get("whatsapp_auto_reply", "1") == "0":
+        return {"reply": None, "ignored": True, "reason": "auto_reply_disabled"}
+        
+    # 2. Si el remitente está en la lista de números familiares / ignorados, no responder
+    ignored_raw = settings.get("whatsapp_ignored_numbers", "")
+    if ignored_raw and sender_jid:
+        clean_jid = re.sub(r"\D", "", sender_jid)
+        for num in ignored_raw.split(","):
+            clean_num = re.sub(r"\D", "", num)
+            if clean_num and len(clean_num) >= 6 and (clean_num in clean_jid or clean_jid.endswith(clean_num)):
+                logger.info(f"WhatsApp mensaje ignorado por número personal excluido: {sender_jid}")
+                return {"reply": None, "ignored": True, "reason": "ignored_contact_number"}
+    
     try:
-        return generate_whatsapp_reply(message, product_title, settings)
+        res = generate_whatsapp_reply(message, product_title, settings)
+        return res
     except Exception as e:
+        logger.error(f"Error generando respuesta de WhatsApp: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/admin/ai/advisor")

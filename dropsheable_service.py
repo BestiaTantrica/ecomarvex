@@ -119,8 +119,8 @@ def _normalize_dropsheable_product(p: Dict[str, Any]) -> Dict[str, Any]:
         
     stock = int(p.get("StockMayorista") if p.get("StockMayorista") is not None else p.get("stock", 0))
     
-    # Extract high-res image (handles malformed JSON and escaped slashes from Dropsheable)
-    image_url = ""
+    # Extract all high-res images (handles malformed JSON and escaped slashes from Dropsheable)
+    all_images = []
     raw_candidates = [
         p.get("PicturesPersonalizadas"),
         p.get("PictureURLs"),
@@ -130,15 +130,20 @@ def _normalize_dropsheable_product(p: Dict[str, Any]) -> Dict[str, Any]:
     for pics_raw in raw_candidates:
         if not pics_raw:
             continue
-        if isinstance(pics_raw, list) and len(pics_raw) > 0:
-            image_url = str(pics_raw[0]).strip().replace("\\/", "/")
-            break
+        if isinstance(pics_raw, list):
+            for item in pics_raw:
+                url_str = str(item).strip().replace("\\/", "/")
+                if url_str.startswith("http") and url_str not in all_images:
+                    all_images.append(url_str)
         elif isinstance(pics_raw, str):
             clean_str = pics_raw.replace("\\/", "/").strip()
             urls = re.findall(r'https?://[^\s"\'\]]+', clean_str)
-            if urls:
-                image_url = urls[0].strip().rstrip('"\'\\]')
-                break
+            for u in urls:
+                clean_u = u.strip().rstrip('"\'\\]')
+                if clean_u.startswith("http") and clean_u not in all_images:
+                    all_images.append(clean_u)
+
+    image_url = all_images[0] if all_images else ""
 
     # Category and keyword fallback if mayorista provided no image URL
     if not image_url:
@@ -155,6 +160,7 @@ def _normalize_dropsheable_product(p: Dict[str, Any]) -> Dict[str, Any]:
             image_url = "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=800"
         else:
             image_url = "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=800"
+        all_images = [image_url]
         
     category = p.get("Categoria") or p.get("CategoryName") or p.get("category") or "General"
     brand = (p.get("Brand") or p.get("brand") or "").strip()
@@ -200,6 +206,8 @@ def _normalize_dropsheable_product(p: Dict[str, Any]) -> Dict[str, Any]:
         "shipping_origin": shipping_origin,
         "dispatch_time": dispatch_time,
         "image_url": image_url,
+        "images": all_images,
+        "images_json": json.dumps(all_images),
         "description": description,
         "mla": p.get("MLA"),
         "raw": p
@@ -267,7 +275,7 @@ def import_product_to_store(product: dict, custom_sale_price: Optional[float] = 
     supplier_name = product.get("supplier_name", "Dropsheable Mayorista").strip()
     shipping_origin = product.get("shipping_origin", "CABA / GBA").strip()
     dispatch_time = product.get("dispatch_time", "24-48 hs hábiles").strip()
-    supplier_url = f"https://dropsheable.com.ar/frontv2/producto?sku={sku}"
+    images_json = product.get("images_json") or json.dumps([image_url] if image_url else [])
 
     # Check if product with this SKU already exists
     c.execute("SELECT id FROM products WHERE supplier_sku=?", (sku,))
@@ -277,12 +285,12 @@ def import_product_to_store(product: dict, custom_sale_price: Optional[float] = 
         prod_id = existing["id"]
         c.execute("""
         UPDATE products SET
-            title=?, description=?, category=?, image_url=?,
+            title=?, description=?, category=?, image_url=?, images_json=?,
             cost_price=?, sale_price=?, stock=?, supplier_name=?,
             shipping_origin=?, dispatch_time=?, supplier_url=?, active=1
         WHERE id=?
         """, (
-            title, description, category, image_url,
+            title, description, category, image_url, images_json,
             cost_price, sale_price, stock, supplier_name,
             shipping_origin, dispatch_time, supplier_url, prod_id
         ))
@@ -291,13 +299,13 @@ def import_product_to_store(product: dict, custom_sale_price: Optional[float] = 
         created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         c.execute("""
         INSERT INTO products (
-            title, description, category, image_url,
+            title, description, category, image_url, images_json,
             cost_price, sale_price, discount_price, stock,
             supplier_sku, supplier_url, supplier_name,
             shipping_origin, dispatch_time, featured, active, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, 0.0, ?, ?, ?, ?, ?, ?, 0, 1, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, 0.0, ?, ?, ?, ?, ?, ?, 0, 1, ?)
         """, (
-            title, description, category, image_url,
+            title, description, category, image_url, images_json,
             cost_price, sale_price, stock,
             sku, supplier_url, supplier_name,
             shipping_origin, dispatch_time, created_at
