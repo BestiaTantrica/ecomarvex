@@ -37,9 +37,11 @@ web_logs*.txt
 .idea/
 .vscode/
 
-# Content Factory Outputs
+# Content Factory Outputs & Credentials
 content_factory/output/
+content_factory/credentials/
 content_factory/assets/*.mp4
 content_factory/assets/*.mp3
 content_factory/assets/*.vtt
 content_factory/assets/*.txt
+scratch/
