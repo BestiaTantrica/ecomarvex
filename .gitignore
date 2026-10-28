@@ -44,4 +44,7 @@ content_factory/assets/*.mp4
 content_factory/assets/*.mp3
 content_factory/assets/*.vtt
 content_factory/assets/*.txt
+content_factory/assets/*.jpg
+!content_factory/assets/product_khamrah.jpg
+!content_factory/assets/meli_stock/
 scratch/
