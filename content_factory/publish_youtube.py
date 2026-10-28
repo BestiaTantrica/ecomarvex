@@ -51,7 +51,7 @@ def get_authenticated_service():
             flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(
                 str(CLIENT_SECRETS_FILE), SCOPES
             )
-            creds = flow.run_local_server(port=8080)
+            creds = flow.run_local_server(port=0)
             with open(TOKEN_FILE, "w") as token:
                 token.write(creds.to_json())
             print(f"✅ Token guardado en {TOKEN_FILE}")
